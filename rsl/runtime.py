@@ -279,12 +279,15 @@ class Runtime(object):
     def select_any_from(self, key_letter, where_cond):
         return self.metamodel.select_any(key_letter, where_cond)
          
-    def select_many_from(self, key_letter, where_cond):
-        return self.metamodel.select_many(key_letter, where_cond)
+    def select_many_from(self, key_letter, where_cond, order_by):
+        return self.metamodel.select_many(key_letter, where_cond, order_by)
 
     @staticmethod
-    def select_many_in(inst_set, where_cond):
+    def select_many_in(inst_set, where_cond, order_by):
         s = filter(where_cond, inst_set)
+        if order_by:
+            s = order_by(s)
+        
         return xtuml.QuerySet(s)
 
     @staticmethod
@@ -295,6 +298,7 @@ class Runtime(object):
 
     @staticmethod
     def select_one_in(inst_set, where_cond):
+        inst_set = xtuml.QuerySet(inst_set)
         cardinality = Runtime.cardinality(inst_set)
         if cardinality > 1:
             raise RuntimeException('select one from a set with cardinality %d' % 
