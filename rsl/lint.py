@@ -56,7 +56,50 @@ class Linter(xtuml.Visitor):
 
     def enter_CreateNode(self, node):
         self.check_key_letter(node, node.key_letter)
+
+    def enter_SelectOneNode(self, node):
+        '''
+        Check cardinality of select one statements
+        '''
+        prev_targets = list()
+        for nav in node.instance_chain.navigations:
+            
+            one_targets = list()
+            found = False
+            for assoc in self.m.associations:
+                if assoc.rel_id != nav.relation.rel_id:
+                    continue
+
+                if (assoc.target_link.kind == nav.key_letter and
+                    assoc.target_link.phrase == nav.relation.phrase):
+                    source = assoc.source_link
+                    target = assoc.target_link
                     
+                elif (assoc.source_link.kind == nav.key_letter and
+                      assoc.source_link.phrase == nav.relation.phrase):
+                    source = assoc.target_link
+                    target = assoc.source_link
+                    
+                else:
+                    continue
+
+                found = True
+                if target.many:
+                    continue
+                
+                if source in prev_targets or not prev_targets:
+                    one_targets.append(target)
+
+            # skip navigations across unknown associations
+            if not found:
+                return
+            
+            if not one_targets:
+                self.warn(node, 'select one navigation yields a set')
+                return
+            else:
+                prev_targets = one_targets
+
     def enter_SelectAnyInstanceNode(self, node):
         self.check_key_letter(node, node.key_letter)
             
